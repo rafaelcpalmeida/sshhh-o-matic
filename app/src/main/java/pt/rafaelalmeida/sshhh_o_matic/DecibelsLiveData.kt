@@ -6,10 +6,13 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
 import android.util.Log
+import android.widget.Toast
 import java.io.IOException
 import java.lang.RuntimeException
+import java.util.*
+import kotlin.concurrent.timer
 
-class DecibelsLiveData(private val frequencyMs: Long = 250) : LiveData<Float>() {
+class DecibelsLiveData(private val frequencyMs: Long = 500) : LiveData<String>() {
 
     companion object {
         private val TAG = DecibelsLiveData::class.java.simpleName!!
@@ -19,16 +22,37 @@ class DecibelsLiveData(private val frequencyMs: Long = 250) : LiveData<Float>() 
     private val mediaRecorder = MediaRecorder()
     private var handler: Handler? = null
     private var handlerThread: HandlerThread? = null
+    private var avgDecibels = arrayListOf<Float>()
+    private var soundPlayed = false
+
+    private val avgDecibelsCleaner = object: Runnable {
+        override fun run() {
+            avgDecibels.clear()
+            soundPlayed = false
+            handler!!.postDelayed(this, 5000)
+        }
+    }
 
     private val handlerCallback = { msg: Message ->
         if (msg.what == HANDLER_MSG_GET_DECIBELS) {
+            var text = "Avg Decibels: ${String.format(Locale.getDefault(), "%.2f", avgDecibels.average())}"
+
             // Get the sound pressure value
             val volume = mediaRecorder.maxAmplitude
             if (volume != 0) {
                 // Change the sound pressure value to the decibel value
                 val decibels = 20 * Math.log10(volume.toDouble()).toFloat()
-                postValue(decibels)
+
+                avgDecibels.add(decibels)
             }
+
+            if (avgDecibels.average() > 72.5 && !soundPlayed) {
+                postValue("Noise!")
+                soundPlayed = true
+            }
+
+
+            Log.i(TAG, text)
 
             handler?.sendEmptyMessageDelayed(HANDLER_MSG_GET_DECIBELS, frequencyMs)
         }
@@ -64,6 +88,8 @@ class DecibelsLiveData(private val frequencyMs: Long = 250) : LiveData<Float>() 
                         handler.sendEmptyMessage(HANDLER_MSG_GET_DECIBELS)
                     }
                 }
+
+                avgDecibelsCleaner.run()
             } catch (e: IllegalStateException) {
                 Log.e(TAG, "Error initializing mediaRecorder", e)
             } catch (e: IOException) {

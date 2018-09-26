@@ -23,10 +23,9 @@ class HomeActivity : AppCompatActivity() {
         Log.i(TAG, "onCreate")
 
         val mp = MediaPlayer.create (this, R.raw.sshhh)
-        var playing = false
 
         mp.setOnCompletionListener {
-            var audios = arrayOf("rafa", "mafalda").asList()
+            var audios = arrayOf("rafa", "mafalda", "julia", "arne").asList()
 
             val res = R.raw::class.java
             val field = res.getField(audios.shuffled()[0])
@@ -37,25 +36,13 @@ class HomeActivity : AppCompatActivity() {
             mpCustom.start()
 
             mpCustom.setOnCompletionListener {
-                playing = false
+                it.release()
             }
         }
 
-        viewModel.decibelsLiveData.observe(this, Observer { decibels ->
-            val text = "Decibels: ${String.format(Locale.getDefault(), "%.2f", decibels!!)}"
-
-            Log.i(TAG, text)
-
-            if (decibels.toFloat() > 75) {
-                val duration = Toast.LENGTH_SHORT
-                val toast = Toast.makeText(applicationContext, text, duration)
-
-                toast.show()
-
-                if (!mp.isPlaying && !playing) {
-                    mp.start()
-                    playing = true
-                }
+        viewModel.decibelsLiveData.observe(this, Observer { message ->
+            if (message === "Noise!") {
+                mp.start()
             }
         })
     }
