@@ -6,11 +6,9 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
 import android.util.Log
-import android.widget.Toast
 import java.io.IOException
 import java.lang.RuntimeException
 import java.util.*
-import kotlin.concurrent.timer
 
 class DecibelsLiveData(private val frequencyMs: Long = 500) : LiveData<String>() {
 
@@ -23,12 +21,13 @@ class DecibelsLiveData(private val frequencyMs: Long = 500) : LiveData<String>()
     private var handler: Handler? = null
     private var handlerThread: HandlerThread? = null
     private var avgDecibels = arrayListOf<Float>()
-    private var soundPlayed = false
 
     private val avgDecibelsCleaner = object: Runnable {
         override fun run() {
+            if (avgDecibels.average() > 70) {
+                postValue("Noise!")
+            }
             avgDecibels.clear()
-            soundPlayed = false
             handler!!.postDelayed(this, 5000)
         }
     }
@@ -45,12 +44,6 @@ class DecibelsLiveData(private val frequencyMs: Long = 500) : LiveData<String>()
 
                 avgDecibels.add(decibels)
             }
-
-            if (avgDecibels.average() > 72.5 && !soundPlayed) {
-                postValue("Noise!")
-                soundPlayed = true
-            }
-
 
             Log.i(TAG, text)
 
