@@ -21,22 +21,6 @@ class HomeActivity : AppCompatActivity() {
 
         val mp = MediaPlayer.create (this, R.raw.sshhh)
 
-        mp.setOnCompletionListener {
-            var audios = arrayOf("rafa", "mafalda", "julia", "arne").asList()
-
-            val res = R.raw::class.java
-            val field = res.getField(audios.shuffled()[0])
-            val resourceId = field.getInt(null)
-
-            val mpCustom = MediaPlayer.create (this, resourceId)
-
-            mpCustom.start()
-
-            mpCustom.setOnCompletionListener {
-                it.release()
-            }
-        }
-
         viewModel.decibelsLiveData.observe(this, Observer { message ->
             if (message === "Noise!") {
                 mp.start()
