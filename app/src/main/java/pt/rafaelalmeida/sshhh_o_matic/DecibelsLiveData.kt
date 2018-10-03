@@ -15,6 +15,8 @@ class DecibelsLiveData(private val frequencyMs: Long = 500) : LiveData<String>()
     companion object {
         private val TAG = DecibelsLiveData::class.java.simpleName!!
         private const val HANDLER_MSG_GET_DECIBELS = 1
+        private const val SECONDS = 3
+        private const val AVERAGE_DECIBELS_TRIGGER = 60
     }
 
     private val mediaRecorder = MediaRecorder()
@@ -24,11 +26,11 @@ class DecibelsLiveData(private val frequencyMs: Long = 500) : LiveData<String>()
 
     private val avgDecibelsCleaner = object: Runnable {
         override fun run() {
-            if (avgDecibels.average() > 70) {
+            if (avgDecibels.average() > AVERAGE_DECIBELS_TRIGGER) {
                 postValue("Noise!")
             }
             avgDecibels.clear()
-            handler!!.postDelayed(this, 5000)
+            handler!!.postDelayed(this, SECONDS.toLong() * 1000)
         }
     }
 
